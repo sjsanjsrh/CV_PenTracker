@@ -1,5 +1,6 @@
 package com.pentracker.UI;
 
+import java.awt.List;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -13,6 +14,7 @@ import org.opencv.videoio.VideoCapture;
 
 import com.pentracker.opencv.HL_Object;
 import com.pentracker.opencv.ImageProcessor;
+import com.pentracker.opencv.Pen;
 import com.pentracker.opencv.PenTracker;
 
 public class Main
@@ -28,18 +30,20 @@ public class Main
     // Frame for displaying image
 	protected static LinkedList <MyFrame> outframes = new LinkedList <MyFrame>();
 	
+   protected static Pen pen = new Pen();
+	
 	public static void main(String[] args)
 	{
 		loadLibs(args);
 		
-		VideoCapture cap = webcamload(1);
+		VideoCapture cap = webcamload(0);
 		Mat camimg = new Mat();
 		
 		imgPS = new ImageProcessor();
 		penTrack = new PenTracker(imgPS);
 		
 		outimages.add(camimg);					//0
-		outimages.add(imgPS.getSH_Mask());		//1
+		//outimages.add(imgPS.getSH_Mask());		//1
 		//outimages.add(imgPS.getMOVE_Mask());	//2
 		
 		outFrameinit();
@@ -146,36 +150,46 @@ public class Main
 				if(imgPsContours.size() > 0)
 				{
 					Imgproc.drawContours(img, imgPsContours, -1, Scalar_GRN, 1);
-					try
+				
+                    Point biggistObjPoint = penTrack.getBiggistObject().getCenter();
+                    
+                    pen.drawPen(biggistObjPoint);
+                    Imgproc.circle(img, biggistObjPoint, 5, Scalar_BLU, -1, Core.LINE_AA, 0);
+		        }
+				try
+                {
+    				LinkedList<Point> penTrace = pen.getTrace();
+                    for(int i = 1; i < penTrace.size(); i++)
+                    {
+                        Imgproc.circle(img, penTrace.get(i - 1), 2, Scalar_BLU, -1, Core.LINE_AA, 0);
+                        Imgproc.line(img, penTrace.get(i - 1), penTrace.get(i), Scalar_BLU);
+                    }
+                }
+                catch(java.lang.NullPointerException e)
+                {
+                    System.out.println(e);
+                }
+				
+				try
+				{
+					ArrayList <HL_Object> trakObj = penTrack.getHlObjs();
+					
+					
+					for(HL_Object theObj : trakObj)
 					{
-						ArrayList <HL_Object> trakObj = penTrack.getHlObjs();
-						
-						int dmaxArea = 0;
-						int maxArea = 0;
-						
-						for(int i = 0; i < trakObj.size(); i ++)
-						{
-							int a = trakObj.get(i).getArea();
-							if(a > dmaxArea)
-							{
-								dmaxArea = a;
-								maxArea = i;
-							}
-						}
-						Imgproc.circle(img, trakObj.get(maxArea).getCenter(), 5, Scalar_BLU, -1, Core.LINE_AA, 0);
-						
-						for(HL_Object theObj : trakObj)
-						{
-							Point point = theObj.getCenter();
-							Imgproc.circle(img, point, (int) (Math.sqrt(theObj.getArea())), Scalar_YEL, 1, Core.LINE_AA, 0);
-							Imgproc.circle(img, point, 2, Scalar_RED, 1, Core.LINE_AA, 0);
-						}
-						
+						Point point = theObj.getCenter();
+						Imgproc.circle(img, point, (int) (Math.sqrt(theObj.getArea())), Scalar_YEL, 1, Core.LINE_AA, 0);
+						Imgproc.circle(img, point, 2, Scalar_RED, 1, Core.LINE_AA, 0);
 					}
-					catch(java.lang.NullPointerException e)
-					{}
-					catch(java.lang.IndexOutOfBoundsException e)
-					{}
+					
+				}
+				catch(java.lang.NullPointerException e)
+				{
+                    System.out.println(e);
+				}
+				catch(java.lang.IndexOutOfBoundsException e)
+				{
+				    System.out.println(e);
 				}
 				break;
 		}

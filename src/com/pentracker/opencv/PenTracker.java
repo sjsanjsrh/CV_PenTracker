@@ -1,5 +1,6 @@
 package com.pentracker.opencv;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -53,7 +54,9 @@ public class PenTracker
 			}
 			else
 			{
-				System.out.println(this + " " + theratio);
+			    Method nowmethod = new Object(){}.getClass().getEnclosingMethod();
+			    
+			    System.out.println(nowmethod + " " + theratio);
 			}
 			
 		}
@@ -78,6 +81,24 @@ public class PenTracker
 		}
 		
 		return res;
+	}
+	
+	public HL_Object getBiggistObject()
+	{
+	    int dmaxArea = 0;
+        int maxArea = 0;
+        
+        for(int i = 0; i < hlObjs.size(); i ++)
+        {
+            int a = hlObjs.get(i).getArea();
+            if(a > dmaxArea)
+            {
+                dmaxArea = a;
+                maxArea = i;
+            }
+        }
+        
+        return hlObjs.get(maxArea);
 	}
 
 	public LinkedList<MatOfPoint> getContours()
